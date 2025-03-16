@@ -38,7 +38,7 @@ text_of_interest <- human_readable[16:785]
 
 #keeping obs we want, making into a data frame, and 
 #creating some columns using some best-guesses
-iliad_deaths <- text_of_interest[str_detect(text_of_interest, "[:alpha:] ([:upper:])")] %>%
+iliad_deaths_d1 <- text_of_interest[str_detect(text_of_interest, "[:alpha:] ([:upper:])")] %>%
   as.data.frame() %>%
   rename(action = 1) %>%
   mutate(actor = str_extract(action, "^[:alpha:]+"), 
@@ -62,24 +62,47 @@ iliad_deaths <- text_of_interest[str_detect(text_of_interest, "[:alpha:] ([:uppe
 #we know actor has a ton of missingness, skipping for now
 
 #check actor_side
-table(iliad_deaths$actor_side, useNA = "always")
+table(iliad_deaths_d1$actor_side, useNA = "always")
 
 #confirm each record has an injury/death type indicated
-subset(iliad_deaths, wounded == F & hit == F & killed == F)
+subset(iliad_deaths_d1, wounded == F & hit == F & killed == F)
 
 #check victim
-subset(iliad_deaths, is.na(victim))
+subset(iliad_deaths_d1, is.na(victim))
 #all non-standard responses, will revisit
 
 #check victim_side
-table(iliad_deaths$victim_side, useNA = "always")
-subset(iliad_deaths, is.na(victim_side))
+table(iliad_deaths_d1$victim_side, useNA = "always")
+subset(iliad_deaths_d1, is.na(victim_side))
 #also mostly missing or non-standard, will revisit
 
 #check page reference
-subset(iliad_deaths, is.na(page_reference))
+subset(iliad_deaths_d1, is.na(page_reference))
 #missing from source
 
 #okay! this is looking pretty good- 
 #going to add in some manual fixes
 #prior to saving our analysis file
+iliad_deaths_d2 <- iliad_deaths_d1 %>%
+  #work first on completing victim field
+  mutate(victim = case_when(str_detect(action, "twelve sleeping Thracian soldiers") == 1 ~ "Twelve sleeping Thracian soldiers, includes Rhesus",
+                            str_detect(action, "two sons of Merops") == 1 ~ "Two sons of Merops (Adrestus and Amphius)",
+                            str_detect(action, "twenty-seven anonymous Trojans") == 1 ~ "Twenty-seven anonymous Trojans",
+                            victim == "hits Hector" ~ "Hector", 
+                            .default = victim)) %>%
+  #adding in victim side where it is known
+  #otherwise, assuming opposite side of actor
+  mutate(victim_side = case_when(victim == "Twelve sleeping Thracian soldiers, includes Rhesus" ~ "T", 
+                                 victim == "Two sons of Merops (Adrestus and Amphius)" ~ "T",
+                                 victim == "Twenty-seven anonymous Trojans" ~ "T",
+                                 is.na(victim_side) & actor_side == "A" ~ "T",
+                                 is.na(victim_side) & actor_side == "T" ~ "A",
+                                 .default = victim_side))
+
+#recheck victim_side
+table(iliad_deaths_d2$victim_side, useNA = "always")
+
+#great! so now all records have an attack type, 
+#actor_side, victim, victim_side, and a page_reference
+#if it was included on the source! 
+#now we just have to go back and identify the attackers
