@@ -74,7 +74,7 @@ subset(iliad_deaths_d1, is.na(victim))
 #check victim_side
 table(iliad_deaths_d1$victim_side, useNA = "always")
 subset(iliad_deaths_d1, is.na(victim_side))
-#also mostly missing or non-standard, will revisit
+#also mostly missing or non-standard, will revisit 
 
 #check page reference
 subset(iliad_deaths_d1, is.na(page_reference))
