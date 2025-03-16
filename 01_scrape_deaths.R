@@ -51,11 +51,12 @@ iliad_deaths <- text_of_interest[str_detect(text_of_interest, "[:alpha:] ([:uppe
          victim_side = gsub("\\)", "", gsub("\\(", "", str_extract(
                        str_extract(action, "(kills|wounds|hits) [:alpha:]+ \\([:upper:]\\)"), 
                        "\\([:upper:]\\)"))),
-         injury = str_extract(str_extract(gsub("\n"," ", action), 
+         injury = str_squish(gsub(" \\(", "", gsub("\\),+", "", gsub("\\.\\)","", gsub("[0-9]+", "", gsub("\\) \\(+", "", 
+                          str_extract(str_extract(gsub("\n"," ", action), 
                               "(kills|wounds|hits) [:alpha:]+ \\([:upper:]\\)[:punct:]* \\(*[:print:]+\\)*"),
-                              "\\)[:punct:]* \\(*[:print:]+\\)*"
-         ),
-         page_reference = as.numeric(str_extract(action, "[:digit:]+\\.[:digit:]+")))
+                              "\\)[:punct:]* \\(*[:print:]+\\)*"))))))),
+         page_reference = as.numeric(str_extract(action, "[:digit:]+\\.[:digit:]+"))) %>%
+  mutate(injury = if_else(injury == " "| injury == "" | injury == ";", NA, injury))
 
 #check created vars
 #we know actor has a ton of missingness, skipping for now
