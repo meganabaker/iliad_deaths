@@ -103,6 +103,6 @@ iliad_deaths_d2 <- iliad_deaths_d1 %>%
 table(iliad_deaths_d2$victim_side, useNA = "always")
 
 #great! so now all records have an attack type, 
-#actor_side, victim, victim_side, and a page_reference
+#actor_side, victim, victim_side, and a page_reference 
 #if it was included on the source! 
 #now we just have to go back and identify the attackers
