@@ -97,7 +97,10 @@ iliad_deaths_d2 <- iliad_deaths_d1 %>%
                                  victim == "Twenty-seven anonymous Trojans" ~ "T",
                                  is.na(victim_side) & actor_side == "A" ~ "T",
                                  is.na(victim_side) & actor_side == "T" ~ "A",
-                                 .default = victim_side))
+                                 .default = victim_side)) %>%
+  #repairing action fields that won't parse later
+  mutate(action = gsub("Iphidamas T)", "Iphidamas (T)", action)) %>%
+  mutate(action = gsub("spear in the back)", "spear in the back", action))
 
 #recheck victim_side
 table(iliad_deaths_d2$victim_side, useNA = "always")
@@ -106,3 +109,47 @@ table(iliad_deaths_d2$victim_side, useNA = "always")
 #actor_side, victim, victim_side, and a page_reference 
 #if it was included on the source! 
 #now we just have to go back and identify the attackers
+#we should just be able to go back to the orig vector,
+#find the string, and return one prior index when possible
+action_vec <- iliad_deaths_d2$action
+actor_match <- c()
+for (i in 1:length(action_vec)){
+  index <- str_which(human_readable, coll(action_vec[i]))
+  if (length(index) != 0){
+    actor_match[i] <- human_readable[(index - 1)]
+  }
+  else {
+    actor_match[i] <- NA
+  }
+}
+
+#Because the data was messy, and we know that
+#the existing actor field is largely right save 
+#for the excessive missingness, I am going to 
+#manually review the field
+iliad_deaths_d3 <- as.data.frame(cbind(iliad_deaths_d2, actor_match)) %>%
+  mutate(col_actor = coalesce(actor, actor_match))
+
+print_for_review <- iliad_deaths_d3 %>%
+  select(col_actor, action)
+
+#okay, one thing we expected was that two-word
+#names would have to be updated
+#(Telamonian Ajax, Oïlean Ajax)
+#what I didn't expect to find was that
+#we have a bunch of missing records:
+
+#Telamonian Ajax kills Amphius (T), spear in the gut (5.717)
+#Tlepolemus (A) wounds Sarpedon (T) spear in the thigh (5.764)
+#Diomedes wounds Ares in the gut (5.980)
+#Coön (T) wounds Agamemnon (A), spear in the arm (11.288)
+#Socus (T) wounds Odysseus (A), spear in the ribs (11.493)
+#Polypoetes (A) kills Pylon (T) (12.194)
+#Leonteus (A) kills Orestes (T) (12.201)
+#Meriones (A) wounds Deïphobus (T) spear in the arm (13.634)
+#Polites (T) kills Echius (A) (15.400)
+#Thrasymedes (A) kills Maris (T), spear in the shoulder (16.377)
+
+#in good news, looks like by and large the mapping
+#we did above worked! just have to make the updates
+#mentioned above and add back the missing records:
